@@ -23,6 +23,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.observe
 import com.example.android.unscramble.R
 import com.example.android.unscramble.databinding.GameFragmentBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -71,20 +72,36 @@ class GameFragment : Fragment() {
         // Setup a click listener for the Submit and Skip buttons.
         binding.submit.setOnClickListener { onSubmitWord() }
         binding.skip.setOnClickListener { onSkipWord() }
-        // Update the UI
-        updateNextWordOnScreen()
-        binding.score.text = getString(R.string.score, 0)
-        binding.wordCount.text = getString(
-            R.string.word_count, 0, MAX_NO_OF_WORDS)
-    }
 
+        // attach an observer for currentScrambledWord(LiveData)
+        // 第1引数はviewLifecycleOwner : Activity/Fragmentがアクティブかどうかを見る
+        // 第2引数はラムダ式(newWordを引数にとって, その単語を画面に反映する)
+        viewModel.currentScrambledWord.observe(viewLifecycleOwner,
+            { newWord -> binding.textViewUnscrambledWord.text = newWord})
+        
+        // Update the UI
+//        updateNextWordOnScreen()
+//        binding.score.text = getString(R.string.score, 0)
+//        binding.wordCount.text = getString(
+//            R.string.word_count, 0, MAX_NO_OF_WORDS)
+
+        viewModel.score.observe(viewLifecycleOwner,
+            { newScore -> binding.score.text = getString(R.string.score, newScore) })
+
+        viewModel.currentWordCount.observe(viewLifecycleOwner,
+            { newWordCount -> binding.wordCount.text =
+                getString(R.string.word_count, newWordCount, MAX_NO_OF_WORDS)}
+        )
+
+    }
+    
     private fun onSubmitWord() {
         val playerWord = binding.textInputEditText.text.toString()
 
         if(viewModel.isUserWordCorrect(playerWord)) {
             setErrorTextField(false)
             if(viewModel.nextWord()) {
-                updateNextWordOnScreen()
+//                updateNextWordOnScreen()
             } else {
                 showFinalScoreDialog()
             }
@@ -96,7 +113,7 @@ class GameFragment : Fragment() {
     private fun onSkipWord() {
         if(viewModel.nextWord()) {
             setErrorTextField(false)
-            updateNextWordOnScreen()
+//            updateNextWordOnScreen()
         } else {
             showFinalScoreDialog()
         }
@@ -104,7 +121,7 @@ class GameFragment : Fragment() {
     private fun showFinalScoreDialog() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(R.string.congratulations))
-            .setMessage(getString(R.string.you_scored, viewModel.score))
+            .setMessage(getString(R.string.you_scored, viewModel.score.value))
             .setCancelable(false) // バックキーを押されてもキャンセルしないようにする
             .setNegativeButton(getString(R.string.exit)) { _, _ ->
                 exitGame()
@@ -132,7 +149,7 @@ class GameFragment : Fragment() {
     private fun restartGame() {
         viewModel.reinitializeData()
         setErrorTextField(false)
-        updateNextWordOnScreen()
+//        updateNextWordOnScreen()
     }
 
     /*
@@ -155,10 +172,10 @@ class GameFragment : Fragment() {
         }
     }
 
-    /*
-     * Displays the next scrambled word on screen.
-     */
-    private fun updateNextWordOnScreen() {
-        binding.textViewUnscrambledWord.text = viewModel.currentScrambledWord
-    }
+//    /*
+//     * Displays the next scrambled word on screen.
+//     */
+//    private fun updateNextWordOnScreen() {
+//        binding.textViewUnscrambledWord.text = viewModel.currentScrambledWord
+//    }
 }
