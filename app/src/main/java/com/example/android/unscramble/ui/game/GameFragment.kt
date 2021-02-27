@@ -21,9 +21,9 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.observe
 import com.example.android.unscramble.R
 import com.example.android.unscramble.databinding.GameFragmentBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -38,6 +38,13 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
  * View(UI controller : activity/fragment)はView・Dataの表示やuser interactionのみ扱う
  * viewModelではUI controllerが必要とするデータの処理(計算, データの取得など)を行う
  *
+ * DataBinding
+ * binding data from code to views + view binding (binding views to code)
+ * Example using view binding in UI controller
+ *      binding.textViewUnscrambledWord.text = viewModel.currentScrambledWord
+ * 
+ * Example using data binding in layout file
+ *      android:text="@{gameViewModel.currentScrambledWord}"
  */
 
 class GameFragment : Fragment() {
@@ -58,7 +65,10 @@ class GameFragment : Fragment() {
             savedInstanceState: Bundle?
     ): View {
         // Inflate the layout XML file and return a binding object instance
-        binding = GameFragmentBinding.inflate(inflater, container, false)
+//        binding = GameFragmentBinding.inflate(inflater, container, false)
+        // change viewBinding to dataBinding
+        binding = DataBindingUtil.inflate(inflater, R.layout.game_fragment, container, false)
+        
         Log.d("GameFragment", "GameFragment created/re-created!")
         Log.d("GameFragment", "Word: ${viewModel.currentScrambledWord} " +
                 "Score: ${viewModel.score} WordCount: ${viewModel.currentWordCount}")
@@ -69,6 +79,12 @@ class GameFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // dataBinding 変数の初期化
+        binding.gameViewModel = viewModel
+        binding.maxNoOfWords = MAX_NO_OF_WORDS
+
+        // ライフサイクルを監視する
+        binding.lifecycleOwner = viewLifecycleOwner
         // Setup a click listener for the Submit and Skip buttons.
         binding.submit.setOnClickListener { onSubmitWord() }
         binding.skip.setOnClickListener { onSkipWord() }
@@ -76,8 +92,9 @@ class GameFragment : Fragment() {
         // attach an observer for currentScrambledWord(LiveData)
         // 第1引数はviewLifecycleOwner : Activity/Fragmentがアクティブかどうかを見る
         // 第2引数はラムダ式(newWordを引数にとって, その単語を画面に反映する)
-        viewModel.currentScrambledWord.observe(viewLifecycleOwner,
-            { newWord -> binding.textViewUnscrambledWord.text = newWord})
+        // dataBindingで監視するので不要
+//        viewModel.currentScrambledWord.observe(viewLifecycleOwner,
+//            { newWord -> binding.textViewUnscrambledWord.text = newWord})
         
         // Update the UI
 //        updateNextWordOnScreen()
@@ -85,13 +102,13 @@ class GameFragment : Fragment() {
 //        binding.wordCount.text = getString(
 //            R.string.word_count, 0, MAX_NO_OF_WORDS)
 
-        viewModel.score.observe(viewLifecycleOwner,
-            { newScore -> binding.score.text = getString(R.string.score, newScore) })
-
-        viewModel.currentWordCount.observe(viewLifecycleOwner,
-            { newWordCount -> binding.wordCount.text =
-                getString(R.string.word_count, newWordCount, MAX_NO_OF_WORDS)}
-        )
+//        viewModel.score.observe(viewLifecycleOwner,
+//            { newScore -> binding.score.text = getString(R.string.score, newScore) })
+//
+//        viewModel.currentWordCount.observe(viewLifecycleOwner,
+//            { newWordCount -> binding.wordCount.text =
+//                getString(R.string.word_count, newWordCount, MAX_NO_OF_WORDS)}
+//        )
 
     }
     
@@ -131,16 +148,16 @@ class GameFragment : Fragment() {
             }
             .show()
     }
-    override fun onDetach() {
-        super.onDetach()
-        Log.d("GameFragment", "GameFragment destroyed!")
-    }
+//    override fun onDetach() {
+//        super.onDetach()
+//        Log.d("GameFragment", "GameFragment destroyed!")
+//    }
 
-    private fun getNextScrambledWord(): String {
-        val tempWord = allWordsList.random().toCharArray()
-        tempWord.shuffle()
-        return String(tempWord)
-    }
+//    private fun getNextScrambledWord(): String {
+//        val tempWord = allWordsList.random().toCharArray()
+//        tempWord.shuffle()
+//        return String(tempWord)
+//    }
 
     /*
      * Re-initializes the data in the ViewModel and updates the views with the new data, to
